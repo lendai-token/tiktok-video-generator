@@ -44,10 +44,10 @@ This repository contains two powerful video processing tools:
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/video-processing-tools.git
+git clone https://github.com/lendai-token/tiktok-video-generator.git
 
 # Navigate to the project directory
-cd video-processing-tools
+cd tiktok-video-generator
 
 # Install required packages
 pip install -r requirements.txt
@@ -84,7 +84,7 @@ python video_generator.py
 ### Video Comparison Tool
 
 ```bash
-python video_comparison.py
+python main.py
 ```
 
 1. Click "Select Original Video" to choose the first video
@@ -124,13 +124,6 @@ The Video Comparison Tool provides detailed analysis of differences between two 
 - Border effects
 - Edge detection
 - Overlay presence
-
-## Contributing
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
