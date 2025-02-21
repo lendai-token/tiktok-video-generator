@@ -256,11 +256,11 @@ class VideoModifier:
         saturation_factor = random.uniform(0.9, 1.1) if self.use_color else 1.0  # Wider range
         brightness_factor = random.uniform(0.9, 1.1) if self.use_color else 1.0  # New brightness modification
         
-        border_size = random.randint(0, 50) if self.use_border else 0  # Increased from 0-50
+        border_size = random.randint(0, 4) if self.use_border else 0  # Increased from 0-50
         border_color = (
-            random.randint(0, 255),
-            random.randint(0, 255),
-            random.randint(0, 255)
+            random.randint(0, 50),
+            random.randint(0, 50),
+            random.randint(0, 50)
         ) if self.use_border else (0, 0, 0)
 
         # Create video writer
