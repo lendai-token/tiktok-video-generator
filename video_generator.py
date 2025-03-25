@@ -24,17 +24,13 @@ class VideoGeneratorUI:
         self.speed_var = tk.BooleanVar(value=True)
         self.color_var = tk.BooleanVar(value=True)
         self.border_var = tk.BooleanVar(value=True)
-        self.overlay_var = tk.BooleanVar(value=True)
         self.zoom_var = tk.BooleanVar(value=True)
-        self.edge_var = tk.BooleanVar(value=True)
         
         # Effect parameters
-        self.zoom_min = tk.DoubleVar(value=0.5)
-        self.zoom_max = tk.DoubleVar(value=1.5)
-        self.edge_threshold1 = tk.IntVar(value=100)
-        self.edge_threshold2 = tk.IntVar(value=200)
-        self.speed_min = tk.DoubleVar(value=0.5)
-        self.speed_max = tk.DoubleVar(value=1.5)
+        self.zoom_min = tk.DoubleVar(value=0.8)
+        self.zoom_max = tk.DoubleVar(value=1.1)
+        self.speed_min = tk.DoubleVar(value=0.9)
+        self.speed_max = tk.DoubleVar(value=1.4)
 
         self.setup_ui()
 
@@ -63,7 +59,7 @@ class VideoGeneratorUI:
         ttk.Checkbutton(effects_frame, text="Speed Modification", variable=self.speed_var).grid(row=0, column=0, sticky=tk.W)
         ttk.Checkbutton(effects_frame, text="Color Modification", variable=self.color_var).grid(row=0, column=1, sticky=tk.W)
         ttk.Checkbutton(effects_frame, text="Border Modification", variable=self.border_var).grid(row=1, column=0, sticky=tk.W)
-        ttk.Checkbutton(effects_frame, text="Overlay Modification", variable=self.overlay_var).grid(row=1, column=1, sticky=tk.W)
+        ttk.Checkbutton(effects_frame, text="Zoom Modification", variable=self.zoom_var).grid(row=1, column=1, sticky=tk.W)
 
         # Speed controls
         speed_frame = ttk.LabelFrame(params_frame, text="Speed Settings", padding="5")
@@ -78,21 +74,10 @@ class VideoGeneratorUI:
         zoom_frame = ttk.LabelFrame(params_frame, text="Zoom Settings", padding="5")
         zoom_frame.grid(row=3, column=0, columnspan=2, pady=5, sticky=(tk.W, tk.E))
         
-        ttk.Checkbutton(zoom_frame, text="Enable Zoom", variable=self.zoom_var).grid(row=0, column=0, sticky=tk.W)
-        ttk.Label(zoom_frame, text="Min Zoom:").grid(row=1, column=0, sticky=tk.W)
-        ttk.Entry(zoom_frame, textvariable=self.zoom_min, width=10).grid(row=1, column=1)
-        ttk.Label(zoom_frame, text="Max Zoom:").grid(row=1, column=2, sticky=tk.W)
-        ttk.Entry(zoom_frame, textvariable=self.zoom_max, width=10).grid(row=1, column=3)
-
-        # Edge Detection controls
-        edge_frame = ttk.LabelFrame(params_frame, text="Edge Detection", padding="5")
-        edge_frame.grid(row=4, column=0, columnspan=2, pady=5, sticky=(tk.W, tk.E))
-        
-        ttk.Checkbutton(edge_frame, text="Enable Edge Detection", variable=self.edge_var).grid(row=0, column=0, sticky=tk.W)
-        ttk.Label(edge_frame, text="Threshold1:").grid(row=1, column=0, sticky=tk.W)
-        ttk.Entry(edge_frame, textvariable=self.edge_threshold1, width=10).grid(row=1, column=1)
-        ttk.Label(edge_frame, text="Threshold2:").grid(row=1, column=2, sticky=tk.W)
-        ttk.Entry(edge_frame, textvariable=self.edge_threshold2, width=10).grid(row=1, column=3)
+        ttk.Label(zoom_frame, text="Min Zoom:").grid(row=0, column=0, sticky=tk.W)
+        ttk.Entry(zoom_frame, textvariable=self.zoom_min, width=10).grid(row=0, column=1)
+        ttk.Label(zoom_frame, text="Max Zoom:").grid(row=0, column=2, sticky=tk.W)
+        ttk.Entry(zoom_frame, textvariable=self.zoom_max, width=10).grid(row=0, column=3)
 
         # Generate button
         ttk.Button(main_frame, text="Generate Videos", command=self.start_generation).grid(row=2, column=0, columnspan=3, pady=10)
@@ -138,13 +123,9 @@ class VideoGeneratorUI:
                 self.speed_var.get(),
                 self.color_var.get(),
                 self.border_var.get(),
-                self.overlay_var.get(),
                 self.zoom_var.get(),
-                self.edge_var.get(),
                 self.zoom_min.get(),
                 self.zoom_max.get(),
-                self.edge_threshold1.get(),
-                self.edge_threshold2.get(),
                 self.speed_min.get(),
                 self.speed_max.get(),
                 self.update_progress,
@@ -175,30 +156,29 @@ class VideoGeneratorUI:
 
 class VideoModifier:
     def __init__(self, input_video_path, use_speed=True, use_color=True, 
-             use_border=True, use_overlay=True, use_zoom=True, use_edge=True,
-             zoom_min=0.5, zoom_max=1.5, edge_threshold1=100, edge_threshold2=200,
-             speed_min=0.5, speed_max=2.0, progress_callback=None, 
+             use_border=True, use_zoom=True, zoom_min=0.8, zoom_max=1.1,
+             speed_min=0.9, speed_max=1.4, progress_callback=None, 
              status_callback=None):
         self.input_path = input_video_path
         self.use_speed = use_speed
         self.use_color = use_color
         self.use_border = use_border
-        self.use_overlay = use_overlay
         self.use_zoom = use_zoom
-        self.use_edge = use_edge
         self.zoom_min = zoom_min
         self.zoom_max = zoom_max
-        self.edge_threshold1 = edge_threshold1
-        self.edge_threshold2 = edge_threshold2
         self.speed_min = speed_min
         self.speed_max = speed_max
         self.progress_callback = progress_callback
         self.status_callback = status_callback
         
+        # Fixed output resolution
+        self.output_width = 1080
+        self.output_height = 1920
+        
         self.cap = cv2.VideoCapture(input_video_path)
         self.fps = self.cap.get(cv2.CAP_PROP_FPS)
-        self.width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        self.height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        self.input_width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        self.input_height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         self.frame_count = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
     def apply_zoom(self, frame, zoom_factor):
@@ -229,124 +209,66 @@ class VideoModifier:
         cropped = frame[start_y:end_y, start_x:end_x]
         return cv2.resize(cropped, (width, height), interpolation=cv2.INTER_LINEAR)
 
-    def apply_edge_detection(self, frame):
-        """Apply Canny edge detection"""
-        # Convert to grayscale
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        
-        # Apply Gaussian blur to reduce noise
-        blurred = cv2.GaussianBlur(gray, (5, 5), 0)
-        
-        # Apply Canny edge detection
-        edges = cv2.Canny(blurred, self.edge_threshold1, self.edge_threshold2)
-        
-        # Convert back to BGR for colored edge overlay
-        edges_colored = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
-        
-        # Blend original frame with edges
-        result = cv2.addWeighted(frame, 0.7, edges_colored, 0.3, 0)
-        return result
-
     def generate_modified_video(self, output_path):
         # Random modifications within reasonable ranges
         speed_factor = random.uniform(self.speed_min, self.speed_max) if self.use_speed else 1.0
         zoom_factor = random.uniform(self.zoom_min, self.zoom_max) if self.use_zoom else 1.0
         
-        hue_shift = random.randint(-15, 15) if self.use_color else 0  # Increased from 0-180
-        saturation_factor = random.uniform(0.9, 1.1) if self.use_color else 1.0  # Wider range
-        brightness_factor = random.uniform(0.9, 1.1) if self.use_color else 1.0  # New brightness modification
+        hue_shift = random.randint(-15, 15) if self.use_color else 0
+        saturation_factor = random.uniform(0.9, 1.1) if self.use_color else 1.0
+        brightness_factor = random.uniform(0.9, 1.1) if self.use_color else 1.0
         
-        border_size = random.randint(0, 4) if self.use_border else 0  # Increased from 0-50
+        border_size = random.randint(0, 4) if self.use_border else 0
         border_color = (
             random.randint(0, 50),
             random.randint(0, 50),
             random.randint(0, 50)
         ) if self.use_border else (0, 0, 0)
 
-        # Create video writer
+        # Create video writer with fixed output resolution
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         out = cv2.VideoWriter(
             output_path,
             fourcc,
             self.fps * speed_factor,
-            (self.width, self.height)
+            (self.output_width, self.output_height)
         )
 
         frame_number = 0
         while self.cap.isOpened():
             ret, frame = self.cap.read()
             if not ret:
-              break
+                break
+
+            # Resize frame to target resolution
+            frame = cv2.resize(frame, (self.output_width, self.output_height), 
+                              interpolation=cv2.INTER_LINEAR)
 
             # Apply zoom if enabled
             if self.use_zoom:
-              frame = self.apply_zoom(frame, zoom_factor)
+                frame = self.apply_zoom(frame, zoom_factor)
 
             # Apply color modifications
             if self.use_color:
-              hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-              hsv = hsv.astype(np.float32)
-              
-              hsv[:, :, 0] = (hsv[:, :, 0] + hue_shift) % 180
-              hsv[:, :, 1] = np.clip(hsv[:, :, 1] * saturation_factor, 0, 255)
-              hsv[:, :, 2] = np.clip(hsv[:, :, 2] * brightness_factor, 0, 255)
-              
-              hsv = hsv.astype(np.uint8)
-              frame = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+                hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+                hsv = hsv.astype(np.float32)
+                
+                hsv[:, :, 0] = (hsv[:, :, 0] + hue_shift) % 180
+                hsv[:, :, 1] = np.clip(hsv[:, :, 1] * saturation_factor, 0, 255)
+                hsv[:, :, 2] = np.clip(hsv[:, :, 2] * brightness_factor, 0, 255)
+                
+                hsv = hsv.astype(np.uint8)
+                frame = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
 
             # Apply border
             if self.use_border and border_size > 0:
-              frame = cv2.copyMakeBorder(
-                  frame,
-                  border_size, border_size, border_size, border_size,
-                  cv2.BORDER_CONSTANT,
-                  value=border_color
-              )
-              frame = cv2.resize(frame, (self.width, self.height))
-
-            # Apply edge detection
-            if self.use_edge:
-                edges = cv2.Canny(frame, self.edge_threshold1, self.edge_threshold2)
-                edges_colored = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
-                # Increase edge visibility
-                frame = cv2.addWeighted(frame, 0.6, edges_colored, 0.4, 0)
-
-            # Add overlay
-            if self.use_overlay:
-              # Add multiple overlay elements
-              timestamp = f"Modified: {frame_number/self.fps:.1f}s"
-              cv2.putText(
-                  frame,
-                  timestamp,
-                  (10, 30),
-                  cv2.FONT_HERSHEY_SIMPLEX,
-                  1,
-                  (255, 255, 255),
-                  2
-              )
-              
-              # Add additional overlay text
-              effect_text = f"Zoom: {zoom_factor:.2f}x"
-              cv2.putText(
-                  frame,
-                  effect_text,
-                  (10, 70),
-                  cv2.FONT_HERSHEY_SIMPLEX,
-                  1,
-                  (255, 255, 255),
-                  2
-              )
-
-              # Add random geometric shapes as overlay
-              if frame_number % 30 == 0:  # Every 30 frames
-                  shape_color = (random.randint(0, 255), 
-                              random.randint(0, 255), 
-                              random.randint(0, 255))
-                  cv2.rectangle(frame, 
-                              (self.width-100, 10), 
-                              (self.width-20, 90), 
-                              shape_color, 
-                              -1)
+                frame = cv2.copyMakeBorder(
+                    frame,
+                    border_size, border_size, border_size, border_size,
+                    cv2.BORDER_CONSTANT,
+                    value=border_color
+                )
+                frame = cv2.resize(frame, (self.output_width, self.output_height))
 
             out.write(frame)
             frame_number += 1
